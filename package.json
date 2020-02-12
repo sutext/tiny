@@ -1,0 +1,35 @@
+{
+    "name": "@sutxt/tiny",
+    "version": "1.0.0",
+    "description": "compress image use tinypng for free",
+    "main": "index.js",
+    "bin": {
+        "tiny": "cli.js"
+    },
+    "files": [
+        "index.d.ts",
+        "index.js",
+        "cli.js"
+    ],
+    "scripts": {
+        "test": "node cli.js test.png -b"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+ssh://git@github.com/sutext/tiny.git"
+    },
+    "keywords": [
+        "tinypng",
+        "compress"
+    ],
+    "author": "supertext@icloud.com",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/sutext/tiny/issues"
+    },
+    "homepage": "https://github.com/sutext/tiny#readme",
+    "dependencies": {
+        "@sutxt/fs": "^1.0.11",
+        "commander": "^4.1.1"
+    }
+}

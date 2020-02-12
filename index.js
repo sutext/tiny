@@ -88,7 +88,7 @@ function compress(file, backup, nocache) {
     return upload(file)
         .then(function(obj) {
             console.log('[' + file + ']', 'compress ratio:', obj.output.ratio);
-            return download(dist, obj);
+            return download(obj);
         })
         .then(function(data) {
             console.log('[' + file + ']', 'compress succeed');

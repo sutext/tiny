@@ -16,43 +16,53 @@ var options = {
         'Postman-Token': Date.now(),
         'Cache-Control': 'no-cache',
         'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36'
-    }
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+    },
 };
 function upload(imgpath) {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
         options.headers['Postman-Token'] = Date.now();
-        var req = https.request(options, function(res) {
-            res.on('data', function(buf) {
-                var obj = JSON.parse(buf.toString());
+        var req = https.request(options, function (res) {
+            var body = '';
+            res.on('data', function (buf) {
+                body += buf;
+            });
+            res.on('end', function () {
+                var obj = JSON.parse(body.toString());
                 if (obj.error) {
                     reject(obj.error);
                 } else {
                     resolve(obj);
                 }
             });
+            res.on('error', function (err) {
+                reject(err);
+            });
         });
         req.write(fs.data(imgpath), 'binary');
-        req.on('error', function(err) {
+        req.on('error', function (err) {
             reject(err);
         });
         req.end();
     });
 }
 function download(obj) {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
         var options = new URL(obj.output.url);
-        var req = https.request(options, function(res) {
+        var req = https.request(options, function (res) {
             var body = '';
             res.setEncoding('binary');
-            res.on('data', function(data) {
+            res.on('data', function (data) {
                 body += data;
             });
-            res.on('end', function() {
-                resolve(body);
+            res.on('end', function () {
+                resolve({ ratio: obj.output.ratio, data: body });
+            });
+            res.on('error', function (err) {
+                reject(err);
             });
         });
-        req.on('error', function(err) {
+        req.on('error', function (err) {
             reject(err);
         });
         req.end();
@@ -72,7 +82,7 @@ function compress(file, backup, nocache) {
         console.log('[' + file + ']', ' size has already exceed 5M skip it!');
         return;
     }
-    console.log('[' + file + ']', 'compress started');
+    console.log('[' + file + ']', 'processing started');
     var dist = path.resolve(file);
     if (backup) {
         var obj = path.parse(dist);
@@ -86,36 +96,57 @@ function compress(file, backup, nocache) {
         return Promise.resolve(dist);
     }
     return upload(file)
-        .then(function(obj) {
-            console.log('[' + file + ']', 'compress ratio:', obj.output.ratio);
+        .then(function (obj) {
             return download(obj);
         })
-        .then(function(data) {
-            console.log('[' + file + ']', 'compress succeed');
-            fs.write(dist, data, 'binary');
+        .then(function (obj) {
+            fs.write(dist, obj.data, 'binary');
             fs.cp(dist, cache);
+            console.log('[' + file + ']', 'compress succeed ratio:', obj.ratio);
             return dist;
         })
-        .catch(function(err) {
-            console.warn('[' + file + ']', 'compress error:', err);
+        .catch(function (err) {
+            console.error('[' + file + ']', err);
+            throw err;
         });
 }
-exports.default = function(path, backup, nocache) {
+function batch(files, backup, nocache) {
+    var tasks = [];
+    files.forEach(function (f) {
+        var task = compress(f, backup, nocache);
+        if (task) {
+            tasks.push(task);
+        }
+    });
+    return Promise.all(tasks);
+}
+exports.default = function (path, backup, nocache, size) {
     if (!fs.exist(path)) {
         throw new Error('File or directory not exist:' + path);
     }
     var stat = fs.stats(path);
     if (stat.isDirectory()) {
-        var tasks = [];
-        fs.dir(path).each(function(f) {
-            if (!f.endsWith('_bak.png')) {
-                var task = compress(f, backup, nocache);
-                if (task) {
-                    tasks.push(task);
+        return new Promise(function (resolve, reject) {
+            var files = [];
+            fs.dir(path).each(function (f) {
+                if (!f.endsWith('_bak.png')) {
+                    files.push(f);
+                }
+            }, /(\.png)$/);
+            size = (typeof size === 'number' && size > 0 && size < 25 && size) || 15;
+            console.log('There are ' + files.length + 'files to be compress!');
+            function start() {
+                var bs = files.splice(0, size);
+                if (bs.length > 0) {
+                    console.log('Start to processing ' + bs.length + 'files ...');
+                    console.log('There are ' + files.length + ' files left in the waiting queue ...');
+                    batch(bs, backup, nocache).then(start).catch(reject);
+                } else {
+                    resolve();
                 }
             }
-        }, /(\.png)$/);
-        return Promise.all(tasks);
+            start();
+        });
     } else if (stat.isFile()) {
         return compress(path, backup, nocache);
     }

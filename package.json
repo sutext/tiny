@@ -1,6 +1,6 @@
 {
     "name": "@sutxt/tiny",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "description": "compress image use tinypng for free",
     "main": "index.js",
     "bin": {
@@ -31,5 +31,8 @@
     "dependencies": {
         "@sutxt/fs": "^1.0.11",
         "commander": "^4.1.1"
+    },
+    "devDependencies": {
+        "prettier": "^2.1.2"
     }
 }

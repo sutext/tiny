@@ -8,7 +8,8 @@ program
     .description('compress source file or directory')
     .option('-b --backup', 'need backup origin image files')
     .option('-f --no-cache', 'force compress ignore cache.')
-    .action(function(source, opts) {
-        tiny(source, !!opts.backup, !opts.cache);
+    .option('--batch <batch>', 'number of batch processing task. default 15')
+    .action(function (source, opts) {
+        tiny(source, !!opts.backup, !opts.cache, opts.batch);
     });
 program.parse(process.argv);

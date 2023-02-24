@@ -1,6 +1,6 @@
 'use strict';
 Object.defineProperty(exports, '__esModule', { value: true });
-var fs = require('@sutxt/fs');
+var fs = require('@sutext/fs');
 var path = require('path');
 var https = require('https');
 var cacheHome = path.join(__dirname, '.cache');

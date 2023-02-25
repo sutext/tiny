@@ -50,11 +50,7 @@ function isNeedCompress(file, backup, nocache){
     }
     var cacheFile = getCacheFile(file);
     if (!nocache && fs.exist(cacheFile)) {
-        var dist = path.resolve(file);
-        fs.cp(cacheFile,dist);
-        if (backup) {
-            fs.cp(dist, getBackupFile(file));
-        }
+        fs.cp(cacheFile,path.resolve(file));
         console.log('[' + file + ']', 'compressd use cache:', cacheFile);
         return false;
     }
@@ -118,10 +114,10 @@ function compress(file, backup, nocache) {
             if (backup) {
                 fs.cp(dist, getBackupFile(file));
             }
+            var cacheFile = getCacheFile(file);
             fs.write(dist, obj.data, 'binary');
-            if (!nocache) {
-                fs.cp(dist, getCacheFile(file));
-            }
+            fs.cp(dist, cacheFile);//按原文件内容hash缓存
+            fs.cp(dist, getCacheFile(file));//按新文件内容hash缓存
             console.log('[' + file + ']', 'compress succeed ratio:', obj.ratio);
             return dist;
         })
@@ -150,6 +146,8 @@ exports.default = function (filePath, backup, nocache, size) {
     if (!fs.exist(filePath)) {
         throw new Error('File or directory not exist:' + filePath);
     }
+    backup = (typeof backup === 'boolean' ? backup : true)
+    nocache = (typeof nocache === 'boolean' ? nocache : false)
     var stat = fs.stats(filePath);
     if (stat.isDirectory()) {
         return new Promise(function (resolve, reject) {
@@ -159,7 +157,11 @@ exports.default = function (filePath, backup, nocache, size) {
                     files.push(f);
                 }
             }, /(\.png)$/);
-            size = (typeof size === 'number' && size > 0 && size < 25 && size) || 15;
+            if (files.length <= 0) {
+                resolve();
+                return;
+            }
+            size = (typeof size === 'number' && size > 0 && size < 15)? size : 10;
             console.log('There are ' + files.length + 'files to be compress!');
             function start() {
                 var bs = files.splice(0, size);
@@ -177,22 +179,24 @@ exports.default = function (filePath, backup, nocache, size) {
         return compress(filePath, backup, nocache);
     }
 };
+function restoreFile(file) {
+    var backFile = getBackupFile(file)
+    if (fs.exist(backFile)) {
+        fs.cp(backFile,path.resolve(file))
+        console.log('[' + file + ']', 'restore successful from',backFile);
+
+    }else{
+        console.log('[' + file + ']', 'no backup file exist!');
+    }    
+}
 exports.restore = function(filePath){
     if (!fs.exist(filePath)) {
         throw new Error('File or directory not exist:' + filePath);
     }
     var stat = fs.stats(filePath);
     if (stat.isDirectory()) {
-        fs.dir(filePath).each(function (f) {
-            var backFile = getBackupFile(f)
-            if (fs.exist(backFile)) {
-                fs.cp(backFile,path.resolve(f))
-            }
-        }, /(\.png)$/);
+        fs.dir(filePath).each(restoreFile, /(\.png)$/);
     } else if (stat.isFile()) {
-        var backFile = getBackupFile(filePath)
-        if (fs.exist(backFile)) {
-            fs.cp(backFile,path.resolve(filePath))
-        }
+        restoreFile(filePath)
     }
 }

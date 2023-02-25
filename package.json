@@ -1,6 +1,6 @@
 {
     "name": "@sutext/tiny",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "description": "compress image use tinypng for free",
     "main": "index.js",
     "bin": {
@@ -12,7 +12,7 @@
         "cli.js"
     ],
     "scripts": {
-        "test": "node cli.js testpngs -b"
+        "test": "node cli.js testpngs"
     },
     "repository": {
         "type": "git",

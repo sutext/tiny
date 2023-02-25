@@ -7,15 +7,17 @@ program
     .version(package.version)
     .arguments('<source>')
     .description('compress source file or directory')
-    .option('-b --backup', 'need backup origin image files')
-    .option('-i --no-cache', 'force compress ignore cache.')    
+    .option('-i --no-cache', 'Ignore cache,force compress ')    
     .option('-r --resote', 'restore backup file if exist')
-    .option('--batch <batch>', 'number of batch processing task. default 15')
+    .option('--no-backup', 'Do not backup files')
+    .option('-b --batch <batch>', 'number of batch processing task. default 15')
     .action(function (source, opts) {
         if (!!opts.resote){
             restore(source);
         }else{
-            tiny(source, !!opts.backup, !opts.cache, opts.batch);
+            tiny(source, !!opts.backup, !opts.cache, +opts.batch).then(function(){
+                console.log('tiny all png files successful!')
+            });
         }
     });
 program.parse(process.argv);

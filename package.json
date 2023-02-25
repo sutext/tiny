@@ -12,7 +12,7 @@
         "cli.js"
     ],
     "scripts": {
-        "test": "node cli.js test.png -fb"
+        "test": "node cli.js testpngs -b"
     },
     "repository": {
         "type": "git",

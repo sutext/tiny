@@ -8,3 +8,9 @@
  */
 declare const tiny: (path: string, backup?: boolean, nocache?: boolean, size?: number) => Promise<string[]>;
 export default tiny;
+/**
+ * @description restore backup file if exist
+ * @param path image file path or directory
+ */
+export const restore: (path:string)=>void;
+

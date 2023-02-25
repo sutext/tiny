@@ -1,5 +1,6 @@
 .DS_Store
 .vscode
 .cache
+.backup
 node_modules
 *_bak.png
